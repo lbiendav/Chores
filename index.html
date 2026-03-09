@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Clock</title>
+  <style>
+    /* Base Styling & Background */
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #5b73df, #8960c6);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: white;
+        padding: 40px 20px;
+    }
+
+    /* Header Styling */
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .header h1 {
+        margin: 0 0 10px 0;
+        font-size: 28px;
+        font-weight: 600;
+    }
+    .controls {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 5px 15px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+    }
+    .controls select {
+        border: none;
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-weight: bold;
+        outline: none;
+    }
+
+    /* Grid Layout for Clocks */
+    .clock-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        max-width: 900px;
+        width: 100%;
+    }
+
+    /* Individual Clock Card */
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        color: #333;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    .city {
+        color: #5b73df;
+        font-size: 13px;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    .digital-time {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        letter-spacing: 1px;
+    }
+    .date {
+        color: #888;
+        font-size: 11px;
+        margin-bottom: 20px;
+    }
+
+    /* Analog Clock Styling */
+    .analog-clock {
+        width: 120px;
+        height: 120px;
+        border: 3px solid #b3c2ff;
+        border-radius: 50%;
+        margin: 0 auto;
+        position: relative;
+        background: white;
+    }
+    .hand {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        transform-origin: bottom;
+        border-radius: 4px;
+        transform: translateX(-50%);
+    }
+    .hour-hand {
+        width: 4px;
+        height: 35px;
+        background: #333;
+    }
+    .minute-hand {
+        width: 3px;
+        height: 45px;
+        background: #666;
+    }
+    .second-hand {
+        width: 2px;
+        height: 50px;
+        background: #ff5252;
+    }
+    .center-dot {
+        width: 10px;
+        height: 10px;
+        background: #333;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌍 World Clock</h1>
+  <div class="controls">
+    <span>Display Mode:</span>
+    <select id="displayMode">
+      <option value="Both">Both</option>
+      <option value="Digital">Digital</option>
+      <option value="Analog">Analog</option>
+    </select>
+  </div>
+</div>
+
+<div class="clock-grid" id="clockGrid">
+</div>
+
+<script>
+  // Define the cities and their timezones
+  const locations = [
+      { id: "hanoi", name: "VN Hanoi, Vietnam", tz: "Asia/Ho_Chi_Minh" },
+      { id: "yangon", name: "MM Yangon, Myanmar", tz: "Asia/Yangon" },
+      { id: "seoul", name: "KR Seoul, Korea", tz: "Asia/Seoul" },
+      { id: "tokyo", name: "JP Tokyo, Japan", tz: "Asia/Tokyo" },
+      { id: "singapore", name: "SG Singapore", tz: "Asia/Singapore" },
+      { id: "kl", name: "MY Kuala Lumpur, Malaysia", tz: "Asia/Kuala_Lumpur" }
+  ];
+
+  const clockGrid = document.getElementById('clockGrid');
+
+  // Initialize the UI by creating the HTML for each card
+  function createCards() {
+      locations.forEach(loc => {
+          const cardHTML = `
+              <div class="card" id="card-${loc.id}">
+                  <div class="city">${loc.name}</div>
+                  <div class="digital-time" id="time-${loc.id}">--:--:--</div>
+                  <div class="date" id="date-${loc.id}">---</div>
+                  <div class="analog-clock">
+                      <div class="hand hour-hand" id="hour-${loc.id}"></div>
+                      <div class="hand minute-hand" id="minute-${loc.id}"></div>
+                      <div class="hand second-hand" id="second-${loc.id}"></div>
+                      <div class="center-dot"></div>
+                  </div>
+              </div>
+          `;
+          clockGrid.innerHTML += cardHTML;
+      });
+  }
+
+  // Update the time for every clock
+  function updateClocks() {
+      const now = new Date();
+
+      locations.forEach(loc => {
+          // Get the local time for the specific timezone
+          const tzTimeStr = now.toLocaleString('en-US', { timeZone: loc.tz });
+          const tzTime = new Date(tzTimeStr);
+
+          const hours = tzTime.getHours();
+          const minutes = tzTime.getMinutes();
+          const seconds = tzTime.getSeconds();
+
+          // 1. Update Digital Time (pad with zeroes, e.g., 09:05:02)
+          const formattedTime =
+              String(hours).padStart(2, '0') + ':' +
+              String(minutes).padStart(2, '0') + ':' +
+              String(seconds).padStart(2, '0');
+          document.getElementById(`time-${loc.id}`).textContent = formattedTime;
+
+          // 2. Update Date
+          const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+          document.getElementById(`date-${loc.id}`).textContent = tzTime.toLocaleDateString('en-US', dateOptions);
+
+          // 3. Update Analog Hands (calculate rotation degrees)
+          const secDegree = (seconds / 60) * 360;
+          const minDegree = ((minutes + seconds / 60) / 60) * 360;
+          const hourDegree = ((hours % 12 + minutes / 60) / 12) * 360;
+
+          // 4. Update display mode
+          document.getElementById('displayMode').addEventListener('change', (event) => {
+              const mode = event.target.value;
+
+              // Select all clock cards
+              const cards = document.querySelectorAll('.card');
+
+              cards.forEach(card => {
+              const digital = card.querySelector('.digital-time');
+              const analog = card.querySelector('.analog-clock');
+              // We keep the date visible in all modes as per your screenshot
+
+              if (mode === 'Both') {
+                  digital.style.display = 'block';
+                  analog.style.display = 'block';
+              } else if (mode === 'Digital') {
+                  digital.style.display = 'block';
+                  analog.style.display = 'none';
+              } else if (mode === 'Analog') {
+                  digital.style.display = 'none';
+                  analog.style.display = 'block';
+              }
+            });
+          });
+
+          // Apply CSS transforms
+          document.getElementById(`second-${loc.id}`).style.transform = `translateX(-50%) rotate(${secDegree}deg)`;
+          document.getElementById(`minute-${loc.id}`).style.transform = `translateX(-50%) rotate(${minDegree}deg)`;
+          document.getElementById(`hour-${loc.id}`).style.transform = `translateX(-50%) rotate(${hourDegree}deg)`;
+      });
+  }
+
+  // Run setup and start the timer
+  createCards();
+  updateClocks(); // Run once immediately
+  setInterval(updateClocks, 1000); // Then update every second
+
+</script>
+</body>
+</html>
